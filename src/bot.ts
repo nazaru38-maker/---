@@ -167,34 +167,6 @@ async function handleOrder(
     return;
   }
 
-  // Паливо
-  if (data.step === 4) {
-    data.fuel = text;
-    data.step = 5;
-
-    await ctx.reply(
-      `🛠️ Які пошкодження допускаєте?
-
-`,
-      cancelMenu()
-    );
-
-    return;
-  }
-
-  // Пошкодження
-  if (data.step === 5) {
-    data.damage = text;
-    data.step = 6;
-
-    await ctx.reply(
-      `👤 Як вас звати?`,
-      cancelMenu()
-    );
-
-    return;
-  }
-
   // Ім'я
   if (data.step === 6) {
     data.name = text;
