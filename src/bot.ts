@@ -151,7 +151,7 @@ async function handleOrder(
 
     return;
   }
-
+  
   // Бюджет
   if (data.step === 3) {
     data.budget = text;
