@@ -39,8 +39,6 @@ interface UserData {
   car?: string;
   year?: string;
   budget?: string;
-  fuel?: string;
-  damage?: string;
 
   date?: string;
 
@@ -123,7 +121,7 @@ async function handleOrder(
 ) {
   const userId = ctx.from!.id;
 
-  // Автомобіль
+  // 1. Автомобіль
   if (data.step === 1) {
     data.car = text;
     data.step = 2;
@@ -138,7 +136,7 @@ async function handleOrder(
     return;
   }
 
-  // Рік
+  // 2. Рік
   if (data.step === 2) {
     data.year = text;
     data.step = 3;
@@ -151,26 +149,24 @@ async function handleOrder(
 
     return;
   }
-  
-  // Бюджет
+
+  // 3. Бюджет (одразу переходимо до імені)
   if (data.step === 3) {
     data.budget = text;
     data.step = 4;
 
     await ctx.reply(
-      `⛽ Який тип пального вас цікавить?
-
-`,
+      `👤 Як вас звати?`,
       cancelMenu()
     );
 
     return;
   }
 
-  // Ім'я
-  if (data.step === 6) {
+  // 4. Ім'я
+  if (data.step === 4) {
     data.name = text;
-    data.step = 7;
+    data.step = 5;
 
     await ctx.reply(
       `📞 Вкажіть номер телефону:
@@ -183,8 +179,8 @@ async function handleOrder(
     return;
   }
 
-  // Телефон
-  if (data.step === 7) {
+  // 5. Телефон та надсилання
+  if (data.step === 5) {
     data.phone = text;
 
     const user = ctx.from!;
@@ -198,8 +194,6 @@ async function handleOrder(
 🚘 Автомобіль: ${data.car}
 📅 Рік: ${data.year}
 💰 Бюджет: ${data.budget}
-⛽ Паливо: ${data.fuel}
-🛠️ Пошкодження: ${data.damage}
 
 💬 Telegram:
 @${user.username || "немає username"}
