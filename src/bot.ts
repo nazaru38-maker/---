@@ -24,6 +24,10 @@ if (!CHANNEL_URL) {
   throw new Error("❌ CHANNEL_URL не знайдено у файлі .env");
 }
 
+// Створюємо константу, перевірену на undefined для TypeScript
+const REQUIRED_MANAGER_CHAT_ID: string = MANAGER_CHAT_ID;
+const REQUIRED_CHANNEL_URL: string = CHANNEL_URL;
+
 const bot = new Telegraf(BOT_TOKEN);
 
 // ========================================
@@ -234,7 +238,7 @@ function requestButtons(request: ManagerRequest) {
   } else {
     buttons.push(
       Markup.button.callback(
-        `👨‍💼 В роботі: ${request.managerName}`,
+        `👨‍💼 В роботі: ${request.managerName || "Менеджер"}`,
         `request_taken:${request.id}`
       )
     );
@@ -256,8 +260,9 @@ async function sendRequestToManagers(
 ) {
   const message = buildManagerMessage(request);
 
+  // ВИПРАВЛЕНО: Використовується REQUIRED_MANAGER_CHAT_ID (тип string)
   const sentMessage = await bot.telegram.sendMessage(
-    MANAGER_CHAT_ID,
+    REQUIRED_MANAGER_CHAT_ID,
     message,
     requestButtons(request)
   );
@@ -276,7 +281,9 @@ async function sendRequestToManagers(
 // ========================================
 
 bot.start(async (ctx) => {
-  users.delete(ctx.from.id);
+  if (ctx.from) {
+    users.delete(ctx.from.id);
+  }
 
   await ctx.reply(
     `🇺🇸 Вітаємо у SOVBEZAUTOIMPORT!
@@ -299,18 +306,17 @@ Copart • IAAI
 bot.hears(
   "🚗 Замовити машину з США",
   async (ctx) => {
-    users.set(ctx.from.id, {
-      type: "order",
-      step: 1
-    });
+    if (ctx.from) {
+      users.set(ctx.from.id, {
+        type: "order",
+        step: 1
+      });
+    }
 
     await ctx.reply(
       `🚗 Замовлення автомобіля з США
 
-Напишіть, яку машину ви хочете придбати.
-
-Наприклад:
-BMW 430i`,
+Напишіть, яку машину ви хочете придбати.`,
       cancelMenu()
     );
   }
@@ -325,7 +331,8 @@ async function handleOrder(
   data: UserData,
   text: string
 ) {
-  const userId = ctx.from!.id;
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
 
   // Автомобіль
   if (data.step === 1) {
@@ -333,10 +340,7 @@ async function handleOrder(
     data.step = 2;
 
     await ctx.reply(
-      `📅 Який рік автомобіля вас цікавить?
-
-Наприклад:
-2021-2024`,
+      `📅 Який рік автомобіля вас цікавить?`,
       cancelMenu()
     );
 
@@ -349,10 +353,7 @@ async function handleOrder(
     data.step = 3;
 
     await ctx.reply(
-      `💰 Який орієнтовний бюджет?
-
-Наприклад:
-$20 000`,
+      `💰 Який орієнтовний бюджет?`,
       cancelMenu()
     );
 
@@ -378,10 +379,7 @@ $20 000`,
     data.step = 5;
 
     await ctx.reply(
-      `📞 Вкажіть номер телефону:
-
-Наприклад:
-+380XXXXXXXXX`,
+      `📞 Вкажіть номер телефону:`,
       cancelMenu()
     );
 
@@ -392,7 +390,7 @@ $20 000`,
   if (data.step === 5) {
     data.phone = text;
 
-    const user = ctx.from!;
+    const user = ctx.from;
 
     const request: ManagerRequest = {
       id: generateRequestId(),
@@ -434,18 +432,17 @@ $20 000`,
 bot.hears(
   "📅 Планую замовити машину з США",
   async (ctx) => {
-    users.set(ctx.from.id, {
-      type: "future",
-      step: 1
-    });
+    if (ctx.from) {
+      users.set(ctx.from.id, {
+        type: "future",
+        step: 1
+      });
+    }
 
     await ctx.reply(
       `📅 Плануєте замовити машину з США?
 
-Напишіть, приблизно коли плануєте покупку.
-
-Наприклад:
-через 2 місяці`,
+Напишіть, приблизно коли плануєте покупку.`,
       cancelMenu()
     );
   }
@@ -460,7 +457,8 @@ async function handleFuture(
   data: UserData,
   text: string
 ) {
-  const userId = ctx.from!.id;
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
 
   // Термін
   if (data.step === 1) {
@@ -468,10 +466,7 @@ async function handleFuture(
     data.step = 2;
 
     await ctx.reply(
-      `🚘 Яку машину плануєте придбати?
-
-Наприклад:
-Toyota RAV4`,
+      `🚘 Яку машину плануєте придбати?`,
       cancelMenu()
     );
 
@@ -484,10 +479,7 @@ Toyota RAV4`,
     data.step = 3;
 
     await ctx.reply(
-      `💰 Який приблизно бюджет плануєте?
-
-Наприклад:
-$25 000`,
+      `💰 Який приблизно бюджет плануєте?`,
       cancelMenu()
     );
 
@@ -513,10 +505,7 @@ $25 000`,
     data.step = 5;
 
     await ctx.reply(
-      `📞 Вкажіть номер телефону:
-
-Наприклад:
-+380XXXXXXXXX`,
+      `📞 Вкажіть номер телефону:`,
       cancelMenu()
     );
 
@@ -527,7 +516,7 @@ $25 000`,
   if (data.step === 5) {
     data.phone = text;
 
-    const user = ctx.from!;
+    const user = ctx.from;
 
     const request: ManagerRequest = {
       id: generateRequestId(),
@@ -569,6 +558,7 @@ $25 000`,
 bot.action(
   /^take_request:(.+)$/,
   async (ctx) => {
+    if (!ctx.match) return;
     const requestId = ctx.match[1];
 
     const request = requests.get(requestId);
@@ -628,6 +618,7 @@ bot.action(
 bot.action(
   /^request_taken:(.+)$/,
   async (ctx) => {
+    if (!ctx.match) return;
     const requestId = ctx.match[1];
 
     const request = requests.get(requestId);
@@ -665,7 +656,7 @@ bot.hears(
         [
           Markup.button.url(
             "🚘 Переглянути машини",
-            CHANNEL_URL
+            REQUIRED_CHANNEL_URL
           )
         ],
         [
@@ -691,7 +682,7 @@ bot.hears(
       Markup.inlineKeyboard([
         [
           Markup.button.url(
-            "Sovbez",
+            "Влад",
             "https://t.me/sovbezmazafaka"
           )
         ],
@@ -719,7 +710,9 @@ bot.hears(
 bot.hears(
   "❌ Скасувати",
   async (ctx) => {
-    users.delete(ctx.from.id);
+    if (ctx.from) {
+      users.delete(ctx.from.id);
+    }
 
     await ctx.reply(
       `❌ Заявку скасовано.
@@ -739,7 +732,9 @@ bot.action(
   async (ctx) => {
     await ctx.answerCbQuery();
 
-    users.delete(ctx.from.id);
+    if (ctx.from) {
+      users.delete(ctx.from.id);
+    }
 
     await ctx.reply(
       "Головне меню 👇",
@@ -755,6 +750,8 @@ bot.action(
 bot.on(
   "text",
   async (ctx) => {
+    if (!ctx.from || !ctx.message) return;
+
     const text =
       ctx.message.text.trim();
 
