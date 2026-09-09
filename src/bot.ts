@@ -31,6 +31,18 @@ const REQUIRED_CHANNEL_URL: string = CHANNEL_URL;
 const bot = new Telegraf(BOT_TOKEN);
 
 // ========================================
+// ОБМЕЖЕННЯ РОБОТИ В ГРУПАХ
+// ========================================
+
+// Дозволяємо лише приватні чати або обробку inline-кнопок у робочих групах
+bot.use(async (ctx, next) => {
+  if (ctx.chat?.type === "private" || ctx.callbackQuery) {
+    return next();
+  }
+  return;
+});
+
+// ========================================
 // ТИПИ
 // ========================================
 
@@ -260,7 +272,6 @@ async function sendRequestToManagers(
 ) {
   const message = buildManagerMessage(request);
 
-  // ВИПРАВЛЕНО: Використовується REQUIRED_MANAGER_CHAT_ID (тип string)
   const sentMessage = await bot.telegram.sendMessage(
     REQUIRED_MANAGER_CHAT_ID,
     message,
@@ -817,21 +828,10 @@ bot.catch((error) => {
 
 bot.launch();
 
-console.log(
-  "================================"
-);
-
-console.log(
-  "🚗 SOVBEZAUTOIMPORT BOT ЗАПУЩЕНИЙ"
-);
-
-console.log(
-  "📩 Заявки → група менеджерів"
-);
-
-console.log(
-  "================================"
-);
+console.log("================================");
+console.log("🚗 SOVBEZAUTOIMPORT BOT ЗАПУЩЕНИЙ");
+console.log("📩 Заявки → група менеджерів");
+console.log("================================");
 
 // ========================================
 // ЗУПИНКА
